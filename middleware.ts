@@ -1,12 +1,5 @@
-import { withAuth } from "next-auth/middleware";
-import type { NextRequest } from "next/server";
-
-export default withAuth({
-  pages: {
-    signIn: "/login",
-  },
-});
+export { default } from "next-auth/middleware"
 
 export const config = {
-  matcher: ["/dashboard", "/profile", "/settings"], // rotas protegidas
-};
+  matcher: ["/dashboard/:path*"], // protege /dashboard e subrotas
+}

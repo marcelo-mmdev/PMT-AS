@@ -1,88 +1,91 @@
-"use client";
+"use client"
 
-import { useForm } from "react-hook-form";
-import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { useForm } from "react-hook-form"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Eye, EyeOff } from "lucide-react"
 
-type FormData = {
-  email: string;
-  password: string;
-};
-const Login = () => {
+type LoginForm = {
+  email: string
+  password: string
+}
 
-  const { register, handleSubmit } = useForm<FormData>();
-  const [error, setError] = useState("");
-  const router = useRouter();
+export default function LoginPage() {
+  const [loading, setLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const router = useRouter()
+  const { register, handleSubmit, formState: { errors } } = useForm<LoginForm>()
 
-  const onSubmit = async (data: FormData) => {
-    const result = await signIn("credentials", {
-      redirect: false,
-      email: data.email,
-      password: data.password,
-    });
-    if (result?.error) {
-      setError("Credenciais inválidas");
+  const onSubmit = async (data: LoginForm) => {
+    setLoading(true)
+
+    // 🚀 Mock temporário
+    if (data.email === "admin@email.com" && data.password === "123456") {
+      router.push("/dashboard")
     } else {
-      router.push("/dashboard");
+      alert("Credenciais inválidas")
     }
-  };
+
+    setLoading(false)
+  }
 
   return (
-    <>
-      <div className="w-full min-h-screen grid bg-orange-300/20">
-        <div className="m-auto">
-          <h1 className="w-full font-bold text-4xl mb-5 text-center uppercase">
-            Ação Social 👋
-          </h1>
-          <form
-            onSubmit={handleSubmit(onSubmit)}
-            className="border p-16 bg-white/30 rounded-lg shadow-md"
-          >
-            <h1 className="text-center font-semibold text-3xl mb-5">Cesta Básica</h1>
-            
-            <div className="flex flex-col gap-2">
-              <label>Email</label>
-              <input
-               {...register("email")}
-          type="email"
-          placeholder="E-mail"
-          required
-                className="text-black border border-black/20 rounded-lg p-1 shadow-sm"
-              />
-            </div>
-            <div className="flex flex-col gap-2">
-              <label>Password</label>
-              <input
-               {...register("password")}
-          type="password"
-          placeholder="Senha"
-          required
-                className="text-black border border-black/20 rounded-lg p-1 shadow-sm"
-              />
-            </div>
-
-            {error && <p className="text-red-500 text-sm">{error}</p>}
-          <button
-            type="submit"
-              className="w-full flex justify-center items-center cursor-pointer gap-2 bg-green-300/50 rounded-md p-1 hover:shadow-md mt-5 font-bold text-lg"
-          >
-            Entrar
-          </button>
-          
-            
-            <div className="mt-5">
-              <span className="cursor-default">
-                Sistema
-              </span>
-             
-            </div>
-          </form>
+    <div className="flex min-h-screen items-center justify-center bg-gray-50">
+      <div className="w-full max-w-sm space-y-6">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900">Bem-vindo</h1>
+          <p className="text-sm text-gray-500">Entre para acessar sua conta</p>
         </div>
+
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          {/* Campo Email */}
+          <div>
+            <Input
+              type="email"
+              placeholder="Email"
+              {...register("email", { required: "Digite seu email" })}
+              className="h-11"
+            />
+            {errors.email && (
+              <p className="text-sm text-red-500 mt-1">{errors.email.message}</p>
+            )}
+          </div>
+
+          {/* Campo Senha com botão de exibir/ocultar */}
+          <div className="relative">
+            <Input
+              type={showPassword ? "text" : "password"}
+              placeholder="Senha"
+              {...register("password", { required: "Digite sua senha" })}
+              className="h-11 pr-10"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+            {errors.password && (
+              <p className="text-sm text-red-500 mt-1">{errors.password.message}</p>
+            )}
+          </div>
+
+          <Button 
+            type="submit" 
+            className="w-full h-11 rounded-xl font-medium" 
+            disabled={loading}
+          >
+            {loading ? "Entrando..." : "Entrar"}
+          </Button>
+        </form>
+
+        <p className="text-center text-xs text-gray-400">
+          © {new Date().getFullYear()} Seu Projeto
+        </p>
       </div>
-    </>
-  );
-};
-
-export default Login;
-
+    </div>
+  )
+}
