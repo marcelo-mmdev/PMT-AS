@@ -15,15 +15,15 @@ export async function POST(req: Request) {
   const body = await req.json()
 
   const novaPessoa: Pessoa = {
-    id: randomUUID(),
-    nome: body.nome ?? "",
-    cpf: body.cpf ?? "",
-    rg: body.rg ?? "",
-    endereco: body.endereco ?? "",
-    telefone: body.telefone ?? "",
-    dataNascimento: body.dataNascimento ?? "",
-    nascimento: undefined
-  }
+  id: randomUUID(),
+  nome: body.nome,
+  cpf: body.cpf,
+  rg: body.rg,
+  endereco: body.endereco,
+  telefone: body.telefone,
+  dataNascimento: body.dataNascimento,
+}
+
 
   pessoas.push(novaPessoa)
   return NextResponse.json(novaPessoa, { status: 201 })
