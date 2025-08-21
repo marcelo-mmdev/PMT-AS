@@ -39,7 +39,7 @@ export function CarteirinhaModal({ pessoa, open, onClose }: CarteirinhaModalProp
               <p className="text-sm"><strong>CPF:</strong> {pessoa.cpf}</p>
               <p className="text-sm"><strong>RG:</strong> {pessoa.rg}</p>
               <p className="text-sm"><strong>Telefone:</strong> {pessoa.telefone}</p>
-              <p className="text-sm"><strong>Nascimento:</strong> {pessoa.nascimento}</p>
+              <p className="text-sm"><strong>Nascimento:</strong> {pessoa.dataNascimento}</p>
               <p className="text-sm"><strong>Endereço:</strong> {pessoa.endereco}</p>
             </div>
 
