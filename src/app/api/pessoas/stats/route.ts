@@ -13,7 +13,7 @@ type Pessoa = {
 
 // Aqui simulamos dados. 
 // Depois você troca por consulta no Prisma ou outra fonte.
-let pessoas: Pessoa[] = [
+const pessoas: Pessoa[] = [
   {
     id: "1",
     nome: "Maria Silva",

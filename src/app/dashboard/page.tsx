@@ -76,7 +76,7 @@ export default function DashboardPage() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Média de idade</CardTitle>
+              <CardTitle className="text-sm font-medium">Cestas Distribuidas</CardTitle>
               <Calendar className="h-5 w-5 text-amber-500" />
             </CardHeader>
             <CardContent>

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useState, useRef, useCallback } from "react"
 import { Html5Qrcode } from "html5-qrcode"
 import {
   Dialog,
@@ -10,7 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { QrCode, CheckCircle2, Camera } from "lucide-react"
+import { QrCode, CheckCircle2 } from "lucide-react"
 import { Sidebar } from "@/components/sidebar"
 
 export default function ValidarPage() {
@@ -18,13 +18,12 @@ export default function ValidarPage() {
   const [open, setOpen] = useState(false)
   const scannerRef = useRef<Html5Qrcode | null>(null)
   const [scanning, setScanning] = useState(false)
-  const [useFrontCamera, setUseFrontCamera] = useState(false)
 
   // 🔊 Beep + vibração
   const playFeedback = () => {
     try {
-      const audioCtx = new (window.AudioContext ||
-        (window as any).webkitAudioContext)()
+      const audioCtx =
+        new (window.AudioContext || (window as any).webkitAudioContext)()
       const oscillator = audioCtx.createOscillator()
       const gainNode = audioCtx.createGain()
       oscillator.connect(gainNode)
@@ -43,8 +42,19 @@ export default function ValidarPage() {
     }
   }
 
-  const startScanner = async () => {
-    if (scanning) return
+  const stopScanner = useCallback(async () => {
+    if (scannerRef.current && scanning) {
+      try {
+        await scannerRef.current.stop()
+      } catch {
+        // ignora se já estiver parado
+      }
+      setScanning(false)
+    }
+  }, [scanning])
+
+  const startScanner = useCallback(async () => {
+    if (scanning) return // 🚫 já está rodando
     setScanning(true)
 
     if (!scannerRef.current) {
@@ -53,7 +63,7 @@ export default function ValidarPage() {
 
     try {
       await scannerRef.current.start(
-        { facingMode: useFrontCamera ? "user" : "environment" },
+        { facingMode: "environment" },
         { fps: 10, qrbox: { width: 250, height: 250 } },
         (decodedText) => {
           playFeedback()
@@ -69,41 +79,21 @@ export default function ValidarPage() {
       console.error("Erro ao iniciar câmera:", err)
       setScanning(false)
     }
-  }
-
-  const stopScanner = async () => {
-    if (scannerRef.current && scanning) {
-      try {
-        await scannerRef.current.stop()
-      } catch {
-        // ignora se já estiver parado
-      }
-      setScanning(false)
-    }
-  }
+  }, [scanning, stopScanner])
 
   useEffect(() => {
     startScanner()
     return () => {
       stopScanner()
     }
-  }, [useFrontCamera])
+  }, [startScanner, stopScanner])
 
   useEffect(() => {
-    // só reinicia scanner se modal foi fechado
     if (!open) {
       setScannedResult(null)
       stopScanner().then(() => startScanner())
     }
-  }, [open])
-
-  // 🔘 ação ao confirmar
-  const handleConfirm = async () => {
-    console.log("QR Code confirmado:", scannedResult)
-    // 👉 aqui você pode chamar API / salvar no banco / etc
-    await stopScanner() // 🔴 garante que scanner pare ANTES
-    setOpen(false)
-  }
+  }, [open, stopScanner, startScanner])
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -120,47 +110,28 @@ export default function ValidarPage() {
           </p>
         </div>
 
-        {/* Área do scanner */}
         <div
           id="reader"
-          className="w-full max-w-sm aspect-square rounded-xl shadow-lg overflow-hidden border border-gray-200 bg-black"
+          className="w-full max-w-md rounded-xl shadow-lg overflow-hidden border border-gray-200"
         />
-
-        {/* Botão de alternar câmera */}
-        <Button
-          variant="outline"
-          className="mt-4 flex items-center gap-2"
-          onClick={() => {
-            stopScanner().then(() => setUseFrontCamera((prev) => !prev))
-          }}
-        >
-          <Camera className="w-4 h-4" />
-          Trocar câmera
-        </Button>
       </main>
 
-      {/* Modal */}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-md rounded-2xl shadow-xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-green-600 border-b border-green-200 pb-2">
+            <DialogTitle className="flex items-center gap-2 text-green-600">
               <CheckCircle2 className="w-6 h-6" />
               QR Code Lido com Sucesso
             </DialogTitle>
           </DialogHeader>
           <div className="p-4 text-center">
             <p className="mb-6 font-medium text-gray-700">{scannedResult}</p>
-            <div className="flex justify-center gap-3">
-              <Button
-                className="bg-green-600 hover:bg-green-700 text-white px-6"
-                onClick={handleConfirm}
-              >
-                Confirmar
-              </Button>
-              <Button variant="outline" onClick={() => setOpen(false)}>
-                Cancelar
-              </Button>
-            </div>
+            <Button
+              className="bg-green-600 hover:bg-green-700 text-white px-6"
+              onClick={() => setOpen(false)}
+            >
+              Confirmar
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
