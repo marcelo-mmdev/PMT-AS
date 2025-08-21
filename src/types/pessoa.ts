@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export type Pessoa = {
   id: string
   nome: string
@@ -6,4 +7,14 @@ export type Pessoa = {
   telefone: string
   endereco: string
   dataNascimento: string
+}
+
+let pessoas: any[] = []
+
+export function getPessoasStore() {
+  return pessoas
+}
+
+export function setPessoasStore(data: any[]) {
+  pessoas = data
 }

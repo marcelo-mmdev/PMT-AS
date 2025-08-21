@@ -1,13 +1,11 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from "next/server"
 import { randomUUID } from "crypto"
-
-// armazenamento em memória (⚠️ será perdido a cada restart)
-let pessoas: any[] = []
+import { getPessoasStore, setPessoasStore } from "@/types/pessoa"
+//import { getPessoasStore, setPessoasStore } from "@/store/pessoas"
 
 // GET /api/pessoas → lista todas
 export async function GET() {
-  return NextResponse.json(pessoas)
+  return NextResponse.json(getPessoasStore())
 }
 
 // POST /api/pessoas → cria nova pessoa
@@ -22,14 +20,8 @@ export async function POST(req: Request) {
     telefone: body.telefone,
     dataNascimento: body.dataNascimento,
   }
+  const pessoas = getPessoasStore()
   pessoas.push(novaPessoa)
+  setPessoasStore(pessoas)
   return NextResponse.json(novaPessoa, { status: 201 })
-}
-
-// export para que [id]/route.ts possa acessar
-export function getPessoasStore() {
-  return pessoas
-}
-export function setPessoasStore(data: any[]) {
-  pessoas = data
 }
