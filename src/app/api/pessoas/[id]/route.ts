@@ -1,8 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from "next/server"
 import { getPessoasStore, setPessoasStore } from "../route"
 
 // GET /api/pessoas/:id
-export async function GET(request: Request, context: { params: { id: string } }) {
+export async function GET(request: Request, context: any) {
   const { id } = context.params
   const pessoas = getPessoasStore()
   const pessoa = pessoas.find(p => p.id === id)
@@ -13,7 +14,7 @@ export async function GET(request: Request, context: { params: { id: string } })
 }
 
 // PUT /api/pessoas/:id
-export async function PUT(request: Request, context: { params: { id: string } }) {
+export async function PUT(request: Request, context: any) {
   const { id } = context.params
   const pessoas = getPessoasStore()
   const index = pessoas.findIndex(p => p.id === id)
@@ -29,7 +30,7 @@ export async function PUT(request: Request, context: { params: { id: string } })
 }
 
 // DELETE /api/pessoas/:id
-export async function DELETE(request: Request, context: { params: { id: string } }) {
+export async function DELETE(request: Request, context: any) {
   const { id } = context.params
   let pessoas = getPessoasStore()
   const pessoa = pessoas.find(p => p.id === id)
