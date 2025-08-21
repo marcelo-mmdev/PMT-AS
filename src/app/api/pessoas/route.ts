@@ -13,23 +13,27 @@ export async function GET() {
 // POST /api/pessoas → cria nova pessoa
 export async function POST(req: Request) {
   const body = await req.json()
+
   const novaPessoa: Pessoa = {
     id: randomUUID(),
-    nome: body.nome,
-    cpf: body.cpf,
-    rg: body.rg,
-    endereco: body.endereco,
-    telefone: body.telefone,
-    dataNascimento: body.dataNascimento,
+    nome: body.nome ?? "",
+    cpf: body.cpf ?? "",
+    rg: body.rg ?? "",
+    endereco: body.endereco ?? "",
+    telefone: body.telefone ?? "",
+    dataNascimento: body.dataNascimento ?? "",
+    nascimento: undefined
   }
+
   pessoas.push(novaPessoa)
   return NextResponse.json(novaPessoa, { status: 201 })
 }
 
 // export para que [id]/route.ts possa acessar
-export function getPessoasStore() {
+export function getPessoasStore(): Pessoa[] {
   return pessoas
 }
-export function setPessoasStore(data: Pessoa[]) {
+
+export function setPessoasStore(data: Pessoa[]): void {
   pessoas = data
 }
