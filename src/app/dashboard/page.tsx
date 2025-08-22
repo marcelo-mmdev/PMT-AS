@@ -109,7 +109,7 @@ export default function DashboardPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Distribuição por Gênero</CardTitle>
+              <CardTitle>Distribuição por Ano</CardTitle>
             </CardHeader>
             <CardContent className="h-72">
               <ResponsiveContainer width="100%" height="100%">
