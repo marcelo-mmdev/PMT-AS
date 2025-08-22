@@ -18,7 +18,7 @@ import { QRCodeCanvas } from "qrcode.react"
 import { jsPDF } from "jspdf"
 import { MobileSidebar } from "@/components/mobileSidebar"
 import { Sidebar } from "@/components/sidebar"
-import QrReader from "react-qr-scanner" // 📌 leitor de QRCode
+import { QrReader } from "react-qr-reader"   // ✅ novo leitor de QR Code
 
 export default function PessoasPage() {
   const [pessoas, setPessoas] = useState<Pessoa[]>([])
@@ -26,15 +26,14 @@ export default function PessoasPage() {
   const [editPessoa, setEditPessoa] = useState<Pessoa | null>(null)
   const [carteirinhaPessoa, setCarteirinhaPessoa] = useState<Pessoa | null>(null)
   const [abrirAdd, setAbrirAdd] = useState(false)
-  const [scannerAberto, setScannerAberto] = useState(false) // 📌 controle do leitor
+  const [scannerAberto, setScannerAberto] = useState(false)
   const qrRef = useRef<HTMLCanvasElement | null>(null)
-  const [deletePessoa, setDeletePessoa] = useState<Pessoa | null>(null) // 📌 estado para exclusão
 
   // --- CRUD Pessoas ---
   const handleAddPessoa = (novaPessoa: Pessoa) => {
     setPessoas((prev) => [
       ...prev,
-      { ...novaPessoa, id: String(Date.now()), status: "pendente" }, // 📌 status inicial
+      { ...novaPessoa, id: String(Date.now()), status: "pendente" },
     ])
     setAbrirAdd(false)
   }
@@ -44,11 +43,6 @@ export default function PessoasPage() {
       prev.map((p) => (p.id === pessoa.id ? pessoa : p))
     )
     setEditPessoa(null)
-  }
-
-  const handleDeletePessoa = (id: string) => {
-    setPessoas((prev) => prev.filter((p) => p.id !== id))
-    setDeletePessoa(null)
   }
 
   // --- QRCode Scanner ---
@@ -245,10 +239,8 @@ export default function PessoasPage() {
             <DataTable
               columns={getColumns({
                 onEdit: (pessoa) => setEditPessoa(pessoa),
-                onDelete: (id) => {
-                  const p = pessoas.find((x) => x.id === id)
-                  if (p) setDeletePessoa(p)   // 👉 agora abre modal
-                },
+                onDelete: (id) =>
+                  setPessoas((prev) => prev.filter((p) => p.id !== id)),
                 onCarteirinha: (pessoa) => setCarteirinhaPessoa(pessoa),
               })}
               data={filteredPessoas}
@@ -262,162 +254,20 @@ export default function PessoasPage() {
                     <DialogTitle>Leitor de QR Code</DialogTitle>
                   </DialogHeader>
                   <QrReader
-                    delay={300}
-                    onError={handleError}
-                    onScan={handleScan}
+                    constraints={{ facingMode: "environment" }}
+                    onResult={(result: { getText: () => string | null }, error: any) => {
+                      if (!!result) {
+                        handleScan(result?.getText())
+                      }
+                      if (!!error) {
+                        handleError(error)
+                      }
+                    }}
                     style={{ width: "100%" }}
                   />
                   <div className="flex justify-end pt-3">
                     <Button onClick={() => setScannerAberto(false)}>
                       Fechar
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            )}
-
-            {/* Modal Excluir Pessoa */}
-            {deletePessoa && (
-              <Dialog
-                open={!!deletePessoa}
-                onOpenChange={(open) => {
-                  if (!open) setDeletePessoa(null)
-                }}
-              >
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Excluir Pessoa</DialogTitle>
-                    <DialogDescription>
-                      Tem certeza que deseja excluir{" "}
-                      <strong>{deletePessoa.nome}</strong>? Essa ação não pode
-                      ser desfeita.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="flex justify-end gap-2 pt-4">
-                    <Button
-                      variant="outline"
-                      onClick={() => setDeletePessoa(null)}
-                    >
-                      Cancelar
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      onClick={() => handleDeletePessoa(deletePessoa.id)}
-                    >
-                      Excluir
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            )}
-
-            {/* Modal Editar Pessoa */}
-            {editPessoa && (
-              <Dialog open={!!editPessoa} onOpenChange={() => setEditPessoa(null)}>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Editar Pessoa</DialogTitle>
-                  </DialogHeader>
-
-                  <form
-                    onSubmit={(e) => {
-                      e.preventDefault()
-                      const fd = new FormData(e.currentTarget)
-                      const pessoaAtualizada: Pessoa = {
-                        ...editPessoa,
-                        nome: String(fd.get("nome")),
-                        cpf: String(fd.get("cpf")),
-                        rg: String(fd.get("rg")),
-                        endereco: String(fd.get("endereco")),
-                        telefone: String(fd.get("telefone")),
-                        dataNascimento: String(fd.get("dataNascimento")),
-                      }
-                      handleEditPessoa(pessoaAtualizada)
-                    }}
-                    className="space-y-2"
-                  >
-                    <Input name="nome" defaultValue={editPessoa.nome} required />
-                    <Input name="cpf" defaultValue={editPessoa.cpf} required />
-                    <Input name="rg" defaultValue={editPessoa.rg} required />
-                    <Input name="endereco" defaultValue={editPessoa.endereco} required />
-                    <Input name="telefone" defaultValue={editPessoa.telefone} required />
-                    <Input
-                      name="dataNascimento"
-                      type="date"
-                      defaultValue={editPessoa.dataNascimento}
-                      required
-                    />
-
-                    <div className="flex justify-end gap-2 pt-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setEditPessoa(null)}
-                      >
-                        Cancelar
-                      </Button>
-                      <Button type="submit">Salvar</Button>
-                    </div>
-                  </form>
-                </DialogContent>
-              </Dialog>
-            )}
-
-            {/* Modal Carteirinha */}
-            {carteirinhaPessoa && (
-              <Dialog
-                open={!!carteirinhaPessoa}
-                onOpenChange={() => setCarteirinhaPessoa(null)}
-              >
-                <DialogContent className="max-w-lg">
-                  <DialogHeader>
-                    <DialogTitle>Carteirinha</DialogTitle>
-                    <DialogDescription className="sr-only">
-                      Visualização da carteirinha com QR Code e opção de
-                      download em PDF.
-                    </DialogDescription>
-                  </DialogHeader>
-
-                  <div className="bg-[#f5f9f4] border-2 border-green-900 shadow-lg rounded-md p-4 relative">
-                    {/* Cabeçalho carteirinha */}
-                    <div className="text-center text-xs font-semibold text-green-900">
-                      <p>REPÚBLICA FEDERATIVA DA CIDADE DE TACAIMBÓ</p>
-                      <p>CARTEIRA DA SEC. ASSISTÊNCIA SOCIAL</p>
-                    </div>
-
-                    <div className="flex mt-3 gap-4">
-                      {/* Foto */}
-                      <div className="w-20 h-24 border border-gray-400 bg-gray-100 flex items-center justify-center text-[10px] text-gray-500">
-                        FOTO 3x4
-                      </div>
-
-                      {/* Dados */}
-                      <div className="flex-1 text-sm space-y-1">
-                        <p><strong>Nome:</strong> {carteirinhaPessoa.nome}</p>
-                        <p><strong>CPF:</strong> {carteirinhaPessoa.cpf}</p>
-                        <p><strong>RG:</strong> {carteirinhaPessoa.rg}</p>
-                        <p><strong>Nascimento:</strong> {carteirinhaPessoa.dataNascimento}</p>
-                        <p><strong>Endereço:</strong> {carteirinhaPessoa.endereco}</p>
-                        <p><strong>Telefone:</strong> {carteirinhaPessoa.telefone}</p>
-                      </div>
-                    </div>
-
-                    {/* QRCode */}
-                    <div className="absolute bottom-3 right-3">
-                      <QRCodeCanvas
-                        ref={qrRef}
-                        value={`${carteirinhaPessoa.nome} - ${carteirinhaPessoa.cpf}`}
-                        size={132}
-                        includeMargin
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex justify-end pt-3">
-                    <Button
-                      onClick={() => handleDownloadPDF(carteirinhaPessoa)}
-                    >
-                      Baixar PDF
                     </Button>
                   </div>
                 </DialogContent>
