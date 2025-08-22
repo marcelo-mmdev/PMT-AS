@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export type Pessoa = {
+  status: any
   id: string
   nome: string
   cpf: string

@@ -1,91 +1,79 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
+//import { Pessoa } from "./columns" // ⚠️ Se der loop, mova o type Pessoa p/ types.ts
 import { Button } from "@/components/ui/button"
-import { Pessoa } from "@/types/pessoa"
-//import { Pessoa } from "./types"
 
-export type { Pessoa }
+export type Pessoa = {
+  id: string
+  nome: string
+  cpf: string
+  rg: string
+  endereco: string
+  telefone: string
+  dataNascimento: string
+}
 
-export function getColumns({
-  onEdit,
-  onDelete,
-  onCarteirinha,
-}: {
+interface ActionsProps {
   onEdit: (pessoa: Pessoa) => void
   onDelete: (id: string) => void
   onCarteirinha: (pessoa: Pessoa) => void
-}): ColumnDef<Pessoa>[] {
-  return [
-    {
-      accessorKey: "nome",
-      header: "Nome",
-    },
-    {
-      accessorKey: "cpf",
-      header: "CPF",
-    },
-    {
-      accessorKey: "rg",
-      header: "RG",
-    },
-    {
-      accessorKey: "telefone",
-      header: "Telefone",
-    },
-    {
-      accessorKey: "endereco",
-      header: "Endereço",
-    },
-    {
-      accessorKey: "dataNascimento",
-      header: "Nascimento",
-    },
-    {
-      accessorKey: "status",
-      header: "Status",
-      cell: ({ row }) => {
-        const status = row.original.status
-        return (
-          <span
-            className={`px-2 py-1 rounded text-xs font-medium ${
-              status === "lido"
-                ? "bg-green-100 text-green-700"
-                : "bg-yellow-100 text-yellow-700"
-            }`}
-          >
-            {status === "lido" ? "✔️ Lido" : "⏳ Pendente"}
-          </span>
-        )
-      },
-    },
-    {
-      id: "actions",
-      header: "Ações",
-      cell: ({ row }) => {
-        const pessoa = row.original
-        return (
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => onEdit(pessoa)}>
-              Editar
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onCarteirinha(pessoa)}
-            >
-              Carteirinha
-            </Button>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => onDelete(pessoa.id)}
-            >
-              Excluir
-            </Button>
-          </div>
-        )
-      },
-    },
-  ]
 }
+
+export const getColumns = ({
+  onEdit,
+  onDelete,
+  onCarteirinha,
+}: ActionsProps): ColumnDef<Pessoa>[] => [
+  {
+    accessorKey: "nome",
+    header: "Nome",
+  },
+  {
+    accessorKey: "cpf",
+    header: "CPF",
+  },
+  {
+    accessorKey: "rg",
+    header: "RG",
+  },
+  {
+    accessorKey: "dataNascimento",
+    header: "Nascimento",
+  },
+  {
+    accessorKey: "telefone",
+    header: "Telefone",
+  },
+  {
+    id: "actions",
+    header: "Ações",
+    cell: ({ row }) => {
+      const pessoa = row.original
+      return (
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => onEdit(pessoa)}
+          >
+            Editar
+          </Button>
+          <Button
+            size="sm"
+            variant="destructive"
+            onClick={() => onDelete(pessoa.id)}
+          >
+            Excluir
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => onCarteirinha(pessoa)}
+          >
+            Carteirinha
+          </Button>
+        </div>
+      )
+    },
+  },
+]

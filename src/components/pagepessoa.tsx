@@ -1,5 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
-
+{/* ------ 
 import { useRef, useState } from "react"
 import { DataTable } from "@/components/data-table"
 import { getColumns, Pessoa } from "./columns"
@@ -17,23 +18,22 @@ import { QRCodeCanvas } from "qrcode.react"
 import { jsPDF } from "jspdf"
 import { MobileSidebar } from "@/components/mobileSidebar"
 import { Sidebar } from "@/components/sidebar"
+import { QrReader } from "react-qr-reader"   // ✅ novo leitor de QR Code
 
 export default function PessoasPage() {
-  // Estados principais
   const [pessoas, setPessoas] = useState<Pessoa[]>([])
   const [search, setSearch] = useState("")
   const [editPessoa, setEditPessoa] = useState<Pessoa | null>(null)
   const [carteirinhaPessoa, setCarteirinhaPessoa] = useState<Pessoa | null>(null)
   const [abrirAdd, setAbrirAdd] = useState(false)
-
-  // ref para captar o canvas do QR e inserir no PDF
+  const [scannerAberto, setScannerAberto] = useState(false)
   const qrRef = useRef<HTMLCanvasElement | null>(null)
 
   // --- CRUD Pessoas ---
   const handleAddPessoa = (novaPessoa: Pessoa) => {
     setPessoas((prev) => [
       ...prev,
-      { ...novaPessoa, id: String(Date.now()) },
+      { ...novaPessoa, id: String(Date.now()), status: "pendente" },
     ])
     setAbrirAdd(false)
   }
@@ -43,6 +43,34 @@ export default function PessoasPage() {
       prev.map((p) => (p.id === pessoa.id ? pessoa : p))
     )
     setEditPessoa(null)
+  }
+
+  // --- QRCode Scanner ---
+  const handleScan = (data: string | null) => {
+    if (!data) return
+    const [nome, cpf] = data.split(" - ")
+
+    setPessoas((prev) => {
+      const pessoa = prev.find((p) => p.nome === nome && p.cpf === cpf)
+      if (!pessoa) {
+        alert("⚠️ Pessoa não cadastrada!")
+        return prev
+      }
+
+      if (pessoa.status === "lido") {
+        alert("⚠️ Esse QR Code já foi lido!")
+        return prev
+      }
+
+      return prev.map((p) =>
+        p.id === pessoa.id ? { ...p, status: "lido" } : p
+      )
+    })
+  }
+
+  const handleError = (err: any) => {
+    console.error(err)
+    alert("Erro ao ler QR Code")
   }
 
   // --- PDF Carteirinha ---
@@ -121,30 +149,28 @@ export default function PessoasPage() {
     doc.save(`carteirinha-${pessoa.nome}.pdf`)
   }
 
-  // --- Busca ---
   const filteredPessoas = pessoas.filter((p) =>
     p.nome.toLowerCase().includes(search.toLowerCase())
   )
 
   return (
     <div className="flex h-screen">
-      {/* Sidebar fixa no desktop */}
       <div className="hidden md:flex">
         <Sidebar />
       </div>
 
-      {/* Conteúdo principal */}
       <div className="flex-1 flex flex-col">
-        {/* Topbar */}
         <header className="h-14 border-b flex items-center px-4 bg-white shadow-sm">
           <MobileSidebar />
           <h1 className="ml-4 font-semibold">Painel de Controle</h1>
+          <div className="ml-auto">
+            <Button onClick={() => setScannerAberto(true)}>📷 Ler QR Code</Button>
+          </div>
         </header>
 
-        {/* Conteúdo */}
         <main className="flex-1 p-6 bg-gray-50">
           <div className="p-6 space-y-4">
-            {/* Ações topo */}
+           
             <div className="flex items-center justify-between gap-3">
               <Input
                 placeholder="Pesquisar pessoas..."
@@ -153,6 +179,7 @@ export default function PessoasPage() {
                 className="max-w-sm"
               />
 
+              {/* Botão Adicionar Pessoa 
               <Dialog open={abrirAdd} onOpenChange={setAbrirAdd}>
                 <DialogTrigger asChild>
                   <Button onClick={() => setAbrirAdd(true)}>
@@ -180,6 +207,7 @@ export default function PessoasPage() {
                         endereco: String(fd.get("endereco")),
                         telefone: String(fd.get("telefone")),
                         dataNascimento: String(fd.get("dataNascimento")),
+                        status: "pendente",
                       }
                       handleAddPessoa(novaPessoa)
                     }}
@@ -207,7 +235,7 @@ export default function PessoasPage() {
               </Dialog>
             </div>
 
-            {/* Tabela */}
+            {/* Tabela 
             <DataTable
               columns={getColumns({
                 onEdit: (pessoa) => setEditPessoa(pessoa),
@@ -218,136 +246,28 @@ export default function PessoasPage() {
               data={filteredPessoas}
             />
 
-            {/* Modal Editar */}
-            {editPessoa && (
-              <Dialog
-                open={!!editPessoa}
-                onOpenChange={() => setEditPessoa(null)}
-              >
+            {/* Modal Scanner
+            {scannerAberto && (
+              <Dialog open={scannerAberto} onOpenChange={setScannerAberto}>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Editar Pessoa</DialogTitle>
-                    <DialogDescription className="sr-only">
-                      Altere os campos e salve para atualizar os dados da
-                      pessoa.
-                    </DialogDescription>
+                    <DialogTitle>Leitor de QR Code</DialogTitle>
                   </DialogHeader>
-
-                  <form
-                    onSubmit={(e) => {
-                      e.preventDefault()
-                      const fd = new FormData(e.currentTarget)
-                      const pessoaEditada: Pessoa = {
-                        ...editPessoa,
-                        nome: String(fd.get("nome")),
-                        cpf: String(fd.get("cpf")),
-                        rg: String(fd.get("rg")),
-                        endereco: String(fd.get("endereco")),
-                        telefone: String(fd.get("telefone")),
-                        dataNascimento: String(fd.get("dataNascimento")),
+                  <QrReader
+                    constraints={{ facingMode: "environment" }}
+                    onResult={(result: { getText: () => string | null }, error: any) => {
+                      if (!!result) {
+                        handleScan(result?.getText())
                       }
-                      handleEditPessoa(pessoaEditada)
+                      if (!!error) {
+                        handleError(error)
+                      }
                     }}
-                    className="space-y-2"
-                  >
-                    <Input
-                      name="nome"
-                      defaultValue={editPessoa.nome}
-                      required
-                    />
-                    <Input
-                      name="cpf"
-                      defaultValue={editPessoa.cpf}
-                      required
-                    />
-                    <Input name="rg" defaultValue={editPessoa.rg} required />
-                    <Input
-                      name="endereco"
-                      defaultValue={editPessoa.endereco}
-                      required
-                    />
-                    <Input
-                      name="telefone"
-                      defaultValue={editPessoa.telefone}
-                      required
-                    />
-                    <Input
-                      name="dataNascimento"
-                      type="date"
-                      defaultValue={editPessoa.dataNascimento}
-                      required
-                    />
-
-                    <div className="flex justify-end gap-2 pt-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setEditPessoa(null)}
-                      >
-                        Cancelar
-                      </Button>
-                      <Button type="submit">Salvar</Button>
-                    </div>
-                  </form>
-                </DialogContent>
-              </Dialog>
-            )}
-
-            {/* Modal Carteirinha */}
-            {carteirinhaPessoa && (
-              <Dialog
-                open={!!carteirinhaPessoa}
-                onOpenChange={() => setCarteirinhaPessoa(null)}
-              >
-                <DialogContent className="max-w-lg">
-                  <DialogHeader>
-                    <DialogTitle>Carteirinha</DialogTitle>
-                    <DialogDescription className="sr-only">
-                      Visualização da carteirinha com QR Code e opção de
-                      download em PDF.
-                    </DialogDescription>
-                  </DialogHeader>
-
-                  <div className="bg-[#f5f9f4] border-2 border-green-900 shadow-lg rounded-md p-4 relative">
-                    {/* Cabeçalho carteirinha */}
-                    <div className="text-center text-xs font-semibold text-green-900">
-                      <p>REPÚBLICA FEDERATIVA DA CIDADE DE TACAIMBÓ</p>
-                      <p>CARTEIRA DA SEC. ASSISTÊNCIA SOCIAL</p>
-                    </div>
-
-                    <div className="flex mt-3 gap-4">
-                      {/* Foto */}
-                      <div className="w-20 h-24 border border-gray-400 bg-gray-100 flex items-center justify-center text-[10px] text-gray-500">
-                        FOTO 3x4
-                      </div>
-
-                      {/* Dados */}
-                      <div className="flex-1 text-sm space-y-1">
-                        <p><strong>Nome:</strong> {carteirinhaPessoa.nome}</p>
-                        <p><strong>CPF:</strong> {carteirinhaPessoa.cpf}</p>
-                        <p><strong>RG:</strong> {carteirinhaPessoa.rg}</p>
-                        <p><strong>Nascimento:</strong> {carteirinhaPessoa.dataNascimento}</p>
-                        <p><strong>Endereço:</strong> {carteirinhaPessoa.endereco}</p>
-                        <p><strong>Telefone:</strong> {carteirinhaPessoa.telefone}</p>
-                      </div>
-                    </div>
-
-                    {/* QRCode */}
-                    <div className="absolute bottom-3 right-3">
-                      <QRCodeCanvas
-                        ref={qrRef}
-                        value={`${carteirinhaPessoa.nome} - ${carteirinhaPessoa.cpf}`}
-                        size={132}
-                        includeMargin
-                      />
-                    </div>
-                  </div>
-
+                    style={{ width: "100%" }}
+                  />
                   <div className="flex justify-end pt-3">
-                    <Button
-                      onClick={() => handleDownloadPDF(carteirinhaPessoa)}
-                    >
-                      Baixar PDF
+                    <Button onClick={() => setScannerAberto(false)}>
+                      Fechar
                     </Button>
                   </div>
                 </DialogContent>
@@ -359,3 +279,111 @@ export default function PessoasPage() {
     </div>
   )
 }
+
+
+
+
+
+
+
+
+"use client"
+
+import { ColumnDef } from "@tanstack/react-table"
+import { Button } from "@/components/ui/button"
+import { Pessoa } from "@/types/pessoa"
+//import { Pessoa } from "./types"
+
+export type { Pessoa }
+
+export function getColumns({
+  onEdit,
+  onDelete,
+  onCarteirinha,
+}: {
+  onEdit: (pessoa: Pessoa) => void
+  onDelete: (id: string) => void
+  onCarteirinha: (pessoa: Pessoa) => void
+}): ColumnDef<Pessoa>[] {
+  return [
+    {
+      accessorKey: "nome",
+      header: "Nome",
+    },
+    {
+      accessorKey: "cpf",
+      header: "CPF",
+    },
+    {
+      accessorKey: "rg",
+      header: "RG",
+    },
+    {
+      accessorKey: "telefone",
+      header: "Telefone",
+    },
+    {
+      accessorKey: "endereco",
+      header: "Endereço",
+    },
+    {
+      accessorKey: "dataNascimento",
+      header: "Nascimento",
+    },
+    {
+      accessorKey: "status",
+      header: "Status",
+      cell: ({ row }) => {
+        const status = row.original.status
+        return (
+          <span
+            className={`px-2 py-1 rounded text-xs font-medium ${
+              status === "lido"
+                ? "bg-green-100 text-green-700"
+                : "bg-yellow-100 text-yellow-700"
+            }`}
+          >
+            {status === "lido" ? "✔️ Lido" : "⏳ Pendente"}
+          </span>
+        )
+      },
+    },
+    {
+      id: "actions",
+      header: "Ações",
+      cell: ({ row }) => {
+        const pessoa = row.original
+        return (
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => onEdit(pessoa)}>
+              Editar
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onCarteirinha(pessoa)}
+            >
+              Carteirinha
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => onDelete(pessoa.id)}
+            >
+              Excluir
+            </Button>
+          </div>
+        )
+      },
+    },
+  ]
+}
+
+
+
+
+
+
+
+
+*/}
