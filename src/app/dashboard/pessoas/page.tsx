@@ -46,61 +46,92 @@ export default function PessoasPage() {
   }
 
   // --- PDF Carteirinha ---
-  const handleDownloadPDF = (pessoa: Pessoa) => {
-    const doc = new jsPDF("portrait", "mm", "a4")
+// Baixar PDF — layout espelhando o modal
+const handleDownloadPDF = (pessoa: Pessoa) => {
+  const doc = new jsPDF("portrait", "mm", "a4")
 
-    // Moldura estilo documento
-    doc.setDrawColor(0, 100, 0)
-    doc.setLineWidth(0.8)
-    doc.rect(15, 15, 180, 110)
+  // --- Cartão (moldura) ---
+  const card = { x: 30, y: 30, w: 150, h: 90 }
+  doc.setDrawColor(0, 100, 0)
+  doc.setLineWidth(0.8)
+  doc.rect(card.x, card.y, card.w, card.h)
 
-    // Cabeçalho
-    doc.setTextColor(0, 100, 0)
+  // --- Cabeçalho (igual ao modal) ---
+  doc.setTextColor(0, 100, 0)
+  doc.setFont("helvetica", "bold")
+  doc.setFontSize(11)
+  doc.text(
+    "REPÚBLICA FEDERATIVA DA CIDADE DE TACAIMBÓ",
+    card.x + card.w / 2,
+    card.y + 10,
+    { align: "center" }
+  )
+  doc.text(
+    "CARTEIRA DA SEC. ASSISTÊNCIA SOCIAL",
+    card.x + card.w / 2,
+    card.y + 17,
+    { align: "center" }
+  )
+
+  // --- Foto 3x4 (placeholder) ---
+  const photo = { x: card.x + 8, y: card.y + 26, w: 28, h: 36 }
+  doc.setDrawColor(150)
+  doc.rect(photo.x, photo.y, photo.w, photo.h)
+  doc.setFont("helvetica", "normal")
+  doc.setFontSize(8)
+  doc.setTextColor(120)
+  doc.text("FOTO 3x4", photo.x + photo.w / 2, photo.y + photo.h / 2 + 2, {
+    align: "center",
+  })
+
+  // --- Dados (labels em bold, valores normais; pouco espaçamento) ---
+  const startX = photo.x + photo.w + 8 // após a foto
+  const firstY = photo.y + 6
+  let y = firstY
+  const lineH = 5 // pouco espaço entre linhas
+  doc.setFontSize(10)
+  doc.setTextColor(0)
+
+  const row = (label: string, value: string) => {
+    const lbl = `${label}: `
     doc.setFont("helvetica", "bold")
-    doc.setFontSize(14)
-    doc.text("Cidade de Tacaimbó", 25, 28)
-    doc.setFontSize(12)
-    doc.text("CARTEIRA DE IDENTIDADE", 25, 36)
-
-    // Foto
-    doc.setDrawColor(150)
-    doc.rect(22, 45, 28, 36)
-    doc.setFontSize(8)
-    doc.setTextColor(120)
-    doc.text("FOTO 3x4", 27, 66)
-
-    // Dados da pessoa
-    doc.setTextColor(0)
-    doc.setFont("helvetica", "bold")
-    doc.setFontSize(11)
-
-    const startX = 55
-    let y = 50
-
-    const line = (label: string, value: string) => {
-      doc.text(`${label}:`, startX, y)
-      doc.setFont("helvetica", "normal")
-      doc.text(value || "-", startX + 28, y)
-      doc.setFont("helvetica", "bold")
-      y += 7
-    }
-
-    line("Nome", pessoa.nome)
-    line("CPF", pessoa.cpf)
-    line("RG", pessoa.rg)
-    line("Nascimento", pessoa.dataNascimento)
-    line("Endereço", pessoa.endereco)
-    line("Telefone", pessoa.telefone)
-
-    // QRCode
-    const canvas = qrRef.current
-    if (canvas) {
-      const dataUrl = canvas.toDataURL("image/png")
-      doc.addImage(dataUrl, "PNG", 150, 90, 35, 35)
-    }
-
-    doc.save(`carteirinha-${pessoa.nome}.pdf`)
+    doc.text(lbl, startX, y)
+    const lblW = doc.getTextWidth(lbl)
+    doc.setFont("helvetica", "normal")
+    doc.text(value || "-", startX + lblW, y)
+    y += lineH
   }
+
+  row("Nome", pessoa.nome)
+  row("CPF", pessoa.cpf)
+  row("RG", pessoa.rg)
+  row("Nascimento", pessoa.dataNascimento)
+  row("Endereço", pessoa.endereco)
+  row("Telefone", pessoa.telefone)
+
+  // --- QRCode: "depois do texto na MESMA LINHA" (à direita, alinhado verticalmente ao bloco de dados) ---
+  const canvas = qrRef.current
+  if (canvas) {
+    const dataUrl = canvas.toDataURL("image/png")
+    const qrSize = 38
+    const dataBlockW = 60 // largura reservada para o bloco de textos
+    const padding = 6
+
+    const qrMaxX = card.x + card.w - 8 - qrSize // não ultrapassar a moldura
+    const qrXProposto = startX + dataBlockW + padding
+    const qrX = Math.min(qrXProposto, qrMaxX)
+
+    // centraliza o QR verticalmente em relação ao bloco de textos
+    const lastBaseline = y - lineH
+    const dataMidY = (firstY + lastBaseline) / 2
+    const qrY = dataMidY - qrSize / 2
+
+    doc.addImage(dataUrl, "PNG", qrX, qrY, qrSize, qrSize)
+  }
+
+  // --- salvar ---
+  doc.save(`carteirinha-${pessoa.nome}.pdf`)
+}
 
   // --- Busca ---
   const filteredPessoas = pessoas.filter((p) =>
