@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { Home, Users, QrCode, LogOut, Menu } from "lucide-react"
+import { Home, Users, QrCode, LogOut, Menu, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { signOut } from "next-auth/react"
 import { useState } from "react"
@@ -15,6 +15,7 @@ export function Sidebar() {
   const routes = [
     { label: "Dashboard", icon: Home, href: "/dashboard" },
     { label: "Pessoas", icon: Users, href: "/dashboard/pessoas" },
+    { label: "Usuários", icon: User, href: "/users" },
     { label: "Leitor de QRCode", icon: QrCode, href: "/dashboard/validar" },
   ]
 

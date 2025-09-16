@@ -2,6 +2,19 @@
 admin@teste.com
 123456
 
+MONGODB_URI=mongodb+srv://mmdevsoftware_db_user:<db_password>@cluster.pkzhiot.mongodb.net/?retryWrites=true&w=majority&appName=Cluster
+MONGODB_DB=entregas
+
+
+
+NEXTAUTH_SECRET=uma_chave_super_segura
+NEXTAUTH_URL=http://localhost:3000
+User: mmdevsoftware_db_user  Senha: yGs5m9oIi0giln7M yGs5m9oIi0giln7M 
+
+mongodb://atlas-sql-68bf7a836c839a33b0e64cbb-l5ug9c.a.query.mongodb.net/sample_mflix?ssl=true&authSource=admin
+
+mongodb+srv://mmdevsoftware_db_user:<db_password>@cluster.pkzhiot.mongodb.net/?retryWrites=true&w=majority&appName=Cluster
+
 ## Learn More
 
 - [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
